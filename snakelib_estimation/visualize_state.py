@@ -395,6 +395,9 @@ class MinimalPublisher(Node):
         self._marker_msg.colors.clear()
         q = np.array(msg.position, dtype=np.float64)
         v = np.array(msg.velocity, dtype=np.float64)
+        if len(q) != self._model.nq:
+            self.get_logger().warning(f'Expected {self._model.nq} modules got {len(q)}')
+            return
         pin.forwardKinematics(self._model, self._data, q, v)
         # pin.forwardKinematics(self._model, self._data, np.zeros_like(q), np.zeros_like(v))
         pin.updateFramePlacements(self._model, self._data)
