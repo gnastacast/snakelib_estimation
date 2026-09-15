@@ -154,6 +154,7 @@ class MinimalPublisher(Node):
     _data: pin.Data | None = None
     _imu_offsets: list[pin.SE3] | None = None
     _yaw_offsets: list[pin.Quaternion] | None = None
+    world: pin.SE3 | None = None
 
     def __init__(self):
         super().__init__('minimal_publisher')
@@ -202,6 +203,8 @@ class MinimalPublisher(Node):
 
         # Initialize the transform broadcaster
         self._tf_broadcaster = TransformBroadcaster(self)
+
+        self.world = pin.SE3.Identity()
 
     def hebi_cb_kdl(self, msg:HebiSensors):
         if self._chain is None:
@@ -413,10 +416,10 @@ class MinimalPublisher(Node):
         world_orientation = self.get_orientation(orientations)
         world_pos = pin.centerOfMass(self._model, self._data)
 
-        world = pin.SE3(world_orientation, world_pos).inverse()
+        self.world = pin.SE3(world_orientation, world_pos).inverse()
         header_world = deepcopy(header)
         header_world.frame_id = 'world'
-        self._tf_broadcaster.sendTransform(pin_to_tf(world, '/head_link', header_world))
+        self._tf_broadcaster.sendTransform(pin_to_tf(self.world, '/head_link', header_world))
 
     def hebi_cb_(self, msg:HebiSensors):
         if self._model is None:
