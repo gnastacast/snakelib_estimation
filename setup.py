@@ -2,7 +2,7 @@ from glob import glob
 
 from setuptools import find_packages, setup
 
-package_name = 'snake_state_viz'
+package_name = 'snakelib_estimation'
 
 setup(
     name=package_name,
@@ -27,7 +27,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-                'visualize_state = snake_state_viz.visualize_state:main',
+                'visualize_state = snakelib_estimation.visualize_state:main',
         ],
     },
 )
