@@ -155,6 +155,8 @@ class MinimalPublisher(Node):
     _imu_offsets: list[pin.SE3] | None = None
     _yaw_offsets: list[pin.Quaternion] | None = None
     world: pin.SE3 | None = None
+    # For SEA snake
+    _last_t: rclpy.time.Time | None = None
 
     def __init__(self):
         super().__init__('minimal_publisher')
@@ -348,6 +350,25 @@ class MinimalPublisher(Node):
             self._marker_msg.colors.append(ColorRGBA(b=1.0, a=1.0, r=(i % 2 / 4) ))# / len(xs) / 2)))
         self._marker_pub.publish(self._marker_msg)
 
+    def draw_accelerations(self, positions: Iterable[Iterable[float]], accelerations:Iterable[Iterable[float]], gravity:Iterable[float]=None, scale=0.1):
+        for i, (accel, p) in enumerate(zip(accelerations, positions)):
+            self._marker_msg.points.append(Point(x=p[0],y=p[1],z=p[2]))
+            self._marker_msg.points.append(Point(
+                x=float(accel[0] + p[0]),
+                y=float(accel[1] + p[1]),
+                z=float(accel[2] + p[2])
+            ))
+            self._marker_msg.colors.append(ColorRGBA(r=1.0, a=1.0, g=(i % 2 / 4) ))
+            self._marker_msg.colors.append(ColorRGBA(r=1.0, a=1.0, g=(i % 2 / 4) ))
+
+        if gravity is not None:
+            self._marker_msg.points.append(Point(x=0.0,y=0.0,z=0.0))
+            self._marker_msg.points.append(Point(
+                x=float(gravity[0]),
+                y=float(gravity[1]),
+                z=float(gravity[2])
+            ))
+        self._marker_pub.publish(self._marker_msg)
 
     def get_orientation(self, orientations:Iterable[pin.SE3], draw_debug=True):
         # 1) Transforms each orientation into the head frame
@@ -405,17 +426,49 @@ class MinimalPublisher(Node):
         # pin.forwardKinematics(self._model, self._data, np.zeros_like(q), np.zeros_like(v))
         pin.updateFramePlacements(self._model, self._data)
 
-        # Get orientations
-        orientations = zip(
-            msg.orientation.w,
-            msg.orientation.x,
-            msg.orientation.y,
-            msg.orientation.z,
-        )
-        orientations = [pin.Quaternion(*o).toRotationMatrix() for o in orientations]
-        world_orientation = self.get_orientation(orientations)
-        world_pos = pin.centerOfMass(self._model, self._data)
+        if np.any(np.isnan(msg.orientation.x)):
+            # Not receiving orientations. Have to build our own
+            t = rclpy.time.Time.from_msg(msg.header.stamp)
+            if self._last_t is None:
+                self._last_t = t
+            dt = (t - self._last_t).nanoseconds / 1e9
+            if dt > 0.5:
+                dt = 0
 
+            self._last_t = t
+            # Get linear accelerations
+            lin_acc = zip(msg.lin_acc.x, msg.lin_acc.y, msg.lin_acc.z)
+            lin_acc = self.imu_to_head_frame(lin_acc)
+
+            # Get gravity direction
+            grav, _, _ = self.get_gravity(lin_acc)
+
+            # Get angular velocities
+            ang_vel = zip(msg.ang_vel.x, msg.ang_vel.y, msg.ang_vel.z)
+            ang_vel = self.imu_to_head_frame(ang_vel)
+            ang_ds = [pin.rpy.rpyToMatrix(*(a)) for a in np.multiply(ang_vel, dt * 2)]
+            ang_d = mean_of_rotations(ang_ds[:-2])
+            world_orientation = self.world.inverse().rotation @ ang_d.T
+            grav_d = pin.Quaternion()
+            pin.Quaternion.setFromTwoVectors(grav_d, world_orientation[0:3,2], grav)
+            world_orientation = grav_d.matrix() @ world_orientation
+
+            # Draw accelerations
+            pos =  [self._data.oMf[self._model.getFrameId(f'{name}_imu')].translation for name in self._joint_names]
+            self.draw_accelerations(pos, lin_acc, grav)
+
+        else:
+            # Get orientations
+            orientations = zip(
+                msg.orientation.w,
+                msg.orientation.x,
+                msg.orientation.y,
+                msg.orientation.z,
+            )
+            orientations = [pin.Quaternion(*o).toRotationMatrix() for o in orientations]
+            world_orientation = self.get_orientation(orientations)
+
+        world_pos = pin.centerOfMass(self._model, self._data)
         self.world = pin.SE3(world_orientation, world_pos).inverse()
         header_world = deepcopy(header)
         header_world.frame_id = 'world'
