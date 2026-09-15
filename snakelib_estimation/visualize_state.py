@@ -466,7 +466,8 @@ class MinimalPublisher(Node):
         self._data = self._model.createData()
         self._joint_names = [
             self._model.names[i] for i in range(1, self._model.njoints)
-            if "Revolute" in self._model.joints[i].shortname()
+            if "Revolute" in self._model.joints[i].shortname() or \
+                self._model.joints[i].shortname() == 'JointModelRZ'
         ]
 
         pin.forwardKinematics(self._model, self._data, np.zeros((self._model.nq,)))
