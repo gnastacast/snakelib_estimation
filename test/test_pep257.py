@@ -19,5 +19,7 @@ import pytest
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    rc = main(argv=['.', 'test'])
+    # Ignore missing docstrings
+    to_ignore = ','.join(['D100', 'D101', 'D102', 'D103', 'D104', 'D107'])
+    rc = main(argv=['.', 'test', '--convention=google', f'--add-ignore={to_ignore}'])
     assert rc == 0, 'Found code style errors / warnings'

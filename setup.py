@@ -27,7 +27,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-                'visualize_state = snakelib_estimation.visualize_state:main',
+                'state_estimation_node = snakelib_estimation.state_estimation_node:main',
         ],
     },
 )
