@@ -76,25 +76,12 @@ def mean_of_rotations(rotations, max_iters=10, tol=1e-6):
 
 
 def get_yaw_offset(orientation: pin.SE3, desired_x):
-    """Given an orientation and a desired X axis, rotate along Z axis to match."""
-    # TODO: this should be a single rotation not a whole matrix
-    z_ax = orientation[:, 2]
-    z_ax = z_ax / np.linalg.norm(z_ax)
-    # Compute the perpendicular component
-    y_ax = np.cross(desired_x, z_ax)
-    y_ax = y_ax / np.linalg.norm(y_ax)
-    x_ax = np.cross(z_ax, y_ax)
-    x_ax = x_ax / np.linalg.norm(x_ax)
-    if np.dot(desired_x, x_ax) < 0:
-        x_ax = -x_ax
-    new_O = np.vstack([x_ax, y_ax, z_ax]).T
-    if np.linalg.det(new_O) < 0:
-        y_ax = -y_ax
-    new_O = np.vstack([x_ax, y_ax, z_ax]).T
-    retval = (new_O.T @ orientation).T
-    retval = retval / (np.abs(np.linalg.det(retval)) ** (1 / retval.shape[0]))
-    return retval
-
+    """Given an orientation and a desired X axis, get the rotation along Z that
+    will rotate the frame to match"""
+    x_ax = (orientation.T @ desired_x)[0:2]
+    x_ax /= np.linalg.norm(x_ax)
+    ang = np.arctan2(np.linalg.det([x_ax, [1,0]]), np.dot(x_ax, [1,0]))
+    return pin.rpy.rpyToMatrix(0,0,ang).T
 
 class Estimator:
     """Estimate world pose from module feedback.
