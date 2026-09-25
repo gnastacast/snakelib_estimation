@@ -129,6 +129,9 @@ class Estimator:
             new_orientations.append(mat @ self._yaw_offsets[i])
 
         self.world.rotation = mean_of_rotations(new_orientations)
+        # Update yaw offsets to correct for modules drifting in relation to eachother
+        for i, mat in enumerate(orientations):
+            self._yaw_offsets[i] = get_yaw_offset(mat, self.world.rotation[:,0])
 
     def update_imus(self, lin_acc, ang_vel, dt):
         """Update self.world using IMU data from the modules.
