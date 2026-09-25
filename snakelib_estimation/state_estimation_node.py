@@ -197,7 +197,7 @@ class EstimatorNode(Node):
             rots = [f.rotation @ o for o, f in zip(rots, self.kinematics.fk())]
             self.estimator.update_orientations(rots)
             if self.debug_msg is not None:
-                self.draw_frames(rots)
+                self.draw_frames([r @ o for r, o in zip(rots, self.estimator._yaw_offsets)])
 
         if self.debug_msg is not None:
             self.debug_msg.header = msg.header
