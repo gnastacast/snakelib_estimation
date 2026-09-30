@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from builtin_interfaces.msg import Duration
 from geometry_msgs.msg import Point
 import numpy as np
