@@ -7,18 +7,22 @@
   <maintainer email="biorobotics@todo.todo">biorobotics</maintainer>
   <license>Apache-2.0</license>
 
+  <build_depend>pybind11</build_depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
 
+  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 
+  <depend>eigen</depend>
   <depend>snakelib_control</depend>
   <depend>snakelib_description</depend>
 
   <export>
-    <build_type>ament_python</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

@@ -211,7 +211,8 @@ class EstimatorNode(Node):
         header_world = msg.header
         header_world.frame_id = 'world'
         self.tf_broadcaster.sendTransform(pin_to_tf(
-            self.estimator.world.inverse(),
+            pin.SE3(self.estimator.world()).inverse(),
+            # self.estimator.world.inverse(),
             '/head_link',
             header_world
         ))
