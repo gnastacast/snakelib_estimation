@@ -23,7 +23,7 @@ def robust_central_direction(vectors: Iterable[Iterable[float]], outlier_thresho
     norms = np.linalg.norm(vectors, axis=1)
     rejected = np.argwhere(norms <= min_norm).flatten().tolist()
     accepted = np.argwhere(norms > min_norm).flatten().tolist()
-    U = np.array([vectors[i] for i in range(len(vectors)) if i in accepted])
+    U = np.array([np.divide(vectors[i], norms[i]) for i in range(len(vectors)) if i in accepted])
 
     # Robust central direction: component-wise median of the unit vectors,
     # renormalized. Dominated by the agreeing majority, so outliers don't move it.
@@ -145,7 +145,7 @@ class Estimator:
         outlier_deg = 10
         grav, _, _ = robust_central_direction(lin_acc,  np.cos(np.radians(outlier_deg)))
 
-        ang_ds = [pin.rpy.rpyToMatrix(*(a)) for a in np.multiply(ang_vel, dt * 2)]
+        ang_ds = [pin.exp3(a * dt * 2) for a in ang_vel]
         ang_d = mean_of_rotations(ang_ds[:-2])
         world_orientation = self.world.inverse().rotation @ ang_d.T
         grav_d = pin.Quaternion()
