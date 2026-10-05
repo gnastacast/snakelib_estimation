@@ -12,7 +12,27 @@ PYBIND11_MODULE(_snakelib_estimation, m)
 
     // Estimator
 
-    py::class_<snakelib_estimation::Estimator>(m, "Estimator")
+    py::class_<snakelib_estimation::Estimator>(m, "Estimator", R"pbdoc(
+        Estimate world pose from module feedback.
+
+        For now, this is limited to orientation estimation.
+        Position must be specified separately.
+
+        Typical usage example (m is a HebiSensors message):
+            est = Estimator()
+            kin = snakelib_estimation.Kinematics()
+            kin.update(m.position, m.velocity)
+            #### Method 1
+            lin_acc = kin.imu_to_head_frame(list(zip(m.lin_acc.x, m.lin_acc.y, m.lin_acc.z)))
+            ang_vel = kin.imu_to_head_frame(list(zip(m.ang_vel.x, m.ang_vel.y, m.ang_vel.z)))
+            est.update_imus(lin_acc, ang_vel, 0.01)
+            #### Method 2
+            ori = msg.orientation
+            rots = [pin.Quaternion(*q).matrix() for q in zip(ori.w, ori.x, ori.y, ori.z)]
+            rots = [f.rotation @ o for o, f in zip(rots, kin.fk())]
+            est.update_orientations(rots)
+    )pbdoc")
+
         .def(
             py::init<>(),
             "Create a new pose estimator."
