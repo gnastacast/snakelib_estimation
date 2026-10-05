@@ -31,8 +31,6 @@ public:
     const std::vector<std::optional<Matrix3>>& yaw_offsets() const;
     const pinocchio::SE3& world() const;
 
-    pinocchio::SE3& world();
-
 private:
     std::vector<std::optional<Matrix3>> yaw_offsets_;
     pinocchio::SE3 world_;

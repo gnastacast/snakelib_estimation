@@ -528,15 +528,6 @@ const pinocchio::SE3& Estimator::world() const
 
 
 /**
- * Mutable access to the estimated world transform.
- */
-pinocchio::SE3& Estimator::world()
-{
-    return world_;
-}
-
-
-/**
  * Access to the estimated yaw offsets
  */
 const std::vector<std::optional<Matrix3>>& Estimator::yaw_offsets() const

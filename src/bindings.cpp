@@ -75,38 +75,6 @@ PYBIND11_MODULE(_snakelib_estimation, m)
         )
 
         .def(
-            "rotation",
-            [](const snakelib_estimation::Estimator& self)
-            {
-                return self.world().rotation();
-            },
-            R"pbdoc(
-                Return the estimated world rotation.
-
-                Returns
-                -------
-                numpy.ndarray
-                    3x3 rotation matrix.
-            )pbdoc"
-        )
-
-        .def(
-            "position",
-            [](const snakelib_estimation::Estimator& self)
-            {
-                return self.world().translation();
-            },
-            R"pbdoc(
-                Return the estimated world position.
-
-                Returns
-                -------
-                numpy.ndarray
-                    3-element position vector.
-            )pbdoc"
-        )
-
-        .def(
             "world",
             [](const snakelib_estimation::Estimator& self)
             {
