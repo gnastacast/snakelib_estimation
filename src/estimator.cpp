@@ -148,7 +148,7 @@ inline Matrix3 meanOfRotations(
  * around Z that aligns the frame with the desired X direction.
  */
 inline Matrix3 getYawOffset(
-    const pinocchio::SE3& orientation,
+    const Matrix3& orientation,
     const Vector3& desired_x)
 {
     Vector3 x_ax = orientation.transpose() * desired_x;
@@ -218,8 +218,7 @@ void Estimator::updateOrientations(
         // Initialize yaw offset so that X points toward global X.
         if (!yaw_offsets_[i].has_value())
         {
-	     pinocchio::SE3 orientation(orientations[i], Vector3::Zero());
-            yaw_offsets_[i] = getYawOffset(orientation, Vector3::UnitX());
+            yaw_offsets_[i] = getYawOffset(orientations[i], Vector3::UnitX());
         }
 
         new_orientations.push_back(orientations[i] * yaw_offsets_[i].value());
@@ -234,10 +233,8 @@ void Estimator::updateOrientations(
             i < orientations.size();
             ++i)
     {
-        pinocchio::SE3 orientation(orientations[i], Vector3::Zero());
-
         yaw_offsets_[i] = getYawOffset(
-            orientation
+            orientations[i],
             world_.rotation().col(0)
         );
     }
