@@ -120,5 +120,21 @@ PYBIND11_MODULE(_snakelib_estimation, m)
                 numpy.ndarray
                     4x4 homogeneous transformation matrix.
             )pbdoc"
+        )
+
+        .def(
+            "yaw_offsets",
+            [](const snakelib_estimation::Estimator& self)
+            {
+                return self.yaw_offsets();
+            },
+            R"pbdoc(
+                Return the estimated yaw offsets.
+
+                Returns
+                -------
+                array-like
+                    3x3 rotation matrices.
+            )pbdoc"
         );
 }

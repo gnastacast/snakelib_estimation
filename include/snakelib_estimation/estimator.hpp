@@ -28,6 +28,7 @@ public:
     void updatePosition(
         const Vector3& position);
 
+    const std::vector<std::optional<Matrix3>>& yaw_offsets() const;
     const pinocchio::SE3& world() const;
 
     pinocchio::SE3& world();
