@@ -146,7 +146,7 @@ class Estimator:
         grav, _, _ = robust_central_direction(lin_acc,  np.cos(np.radians(outlier_deg)))
 
         ang_ds = [pin.exp3(a * dt * 2) for a in ang_vel]
-        ang_d = mean_of_rotations(ang_ds[:-2])
+        ang_d = mean_of_rotations(ang_ds)
         world_orientation = self.world.inverse().rotation @ ang_d.T
         grav_d = pin.Quaternion()
         pin.Quaternion.setFromTwoVectors(grav_d, world_orientation[0:3, 2], grav)

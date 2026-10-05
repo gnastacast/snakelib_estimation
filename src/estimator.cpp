@@ -412,14 +412,6 @@ void Estimator::updateImus(
         angular_deltas.push_back(pinocchio::exp3(rotation_vector));
     }
 
-    if (angular_deltas.size() <= 2)
-    {
-        return;
-    }
-
-    angular_deltas.resize(
-        angular_deltas.size() - 2);
-
     const Matrix3 ang_d = meanOfRotations(angular_deltas);
 
     const Matrix3 world_orientation =
