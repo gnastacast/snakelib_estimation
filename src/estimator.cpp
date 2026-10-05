@@ -233,7 +233,7 @@ inline Matrix3 meanOfRotations(
 {
     if (rotations.empty())
     {
-        return Matrix3::Identity();
+        throw std::invalid_argument("Can't take mean of empty rotation vector");
     }
 
     Matrix3 mean_R = rotations.front();
@@ -318,7 +318,7 @@ void Estimator::updateOrientations(
 {
     if (orientations.empty())
     {
-        return;
+        throw std::invalid_argument("'orientations' can't be empty");
     }
 
     // Initialize yaw offsets.
@@ -381,7 +381,9 @@ void Estimator::updateImus(
 {
     if (lin_acc.empty() || ang_vel.empty())
     {
-        return;
+        throw std::invalid_argument("'lin_acc' and 'ang_vel' can't be empty");
+    } else if(lin_acc.size() != ang_vel.size()) {
+        throw std::invalid_argument("'lin_acc' and 'ang_vel' are different lengths");
     }
 
     constexpr double outlier_deg = 10.0;
