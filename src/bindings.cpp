@@ -8,11 +8,9 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(_snakelib_estimation, m)
 {
-    m.doc() = "Python bindings for the C++ pose estimator";
+    m.doc() = "Python bindings for snake pose estimation";
 
-    // -------------------------------------------------------------------------
     // Estimator
-    // -------------------------------------------------------------------------
 
     py::class_<snakelib_estimation::Estimator>(m, "Estimator")
         .def(

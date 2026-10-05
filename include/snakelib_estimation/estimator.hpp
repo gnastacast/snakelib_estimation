@@ -33,7 +33,7 @@ public:
 
 private:
     std::vector<std::optional<Matrix3>> yaw_offsets_;
-    pinocchio::SE3 world_;
+    pinocchio::SE3 world_; // The calculated head -> world frame
 };
 
 }  // namespace snakelib_estimation

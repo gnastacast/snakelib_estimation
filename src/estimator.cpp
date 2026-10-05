@@ -225,10 +225,6 @@ inline RobustDirectionResult robustCentralDirection(
  * Compute the geometric mean of a list of 3x3 rotation matrices.
  *
  * This uses iterative averaging in the tangent space of SO(3):
- *
- *     error_i = log(mean_R^T * R_i)
- *     mean_error = average(error_i)
- *     mean_R <- mean_R * exp(mean_error)
  */
 inline Matrix3 meanOfRotations(
     const std::vector<Matrix3>& rotations,
@@ -249,8 +245,7 @@ inline Matrix3 meanOfRotations(
         for (const auto& R : rotations)
         {
             // Pinocchio log3() returns the logarithm coordinates of SO(3).
-            const Vector3 error =
-                pinocchio::log3(mean_R.transpose() * R);
+            const Vector3 error = pinocchio::log3(mean_R.transpose() * R);
 
             mean_error += error;
         }
@@ -264,9 +259,7 @@ inline Matrix3 meanOfRotations(
         }
 
         // Move toward the mean using the exponential map.
-        mean_R =
-            mean_R *
-            pinocchio::exp3(mean_error);
+        mean_R = mean_R * pinocchio::exp3(mean_error);
     }
 
     return mean_R;
@@ -276,22 +269,15 @@ inline Matrix3 meanOfRotations(
 /**
  * Given an orientation and a desired X axis, calculate the rotation
  * around Z that aligns the frame with the desired X direction.
- *
- * Equivalent to Python:
- *
- *     get_yaw_offset(orientation, desired_x)
  */
 inline Matrix3 getYawOffset(
     const pinocchio::SE3& orientation,
     const Vector3& desired_x)
 {
-    Vector3 x_ax =
-        orientation.rotation().transpose() * desired_x;
+    Vector3 x_ax = orientation.transpose() * desired_x;
 
     // Only the XY components are relevant.
-    Eigen::Vector2d xy(
-        x_ax.x(),
-        x_ax.y());
+    Eigen::Vector2d xy(x_ax.x(), x_ax.y());
 
     const double norm = xy.norm();
 
@@ -302,23 +288,10 @@ inline Matrix3 getYawOffset(
 
     xy /= norm;
 
-    // Python:
-    //
-    // atan2(
-    //     det([x_ax, [1,0]]),
-    //     dot(x_ax, [1,0])
-    // )
-    //
-    // For x = (x,y), this is atan2(-y, x).
-    const double angle =
-        std::atan2(-xy.y(), xy.x());
+    const double angle = std::atan2(-xy.y(), xy.x());
+    const Vector3 axis = Vector3::UnitZ();
 
-    // Equivalent to pin.rpy.rpyToMatrix(0, 0, angle).
-    Matrix3 yaw =
-        Eigen::AngleAxisd(
-            angle,
-            Vector3::UnitZ())
-            .toRotationMatrix();
+    Matrix3 yaw = Eigen::AngleAxisd(angle, axis).toRotationMatrix();
 
     return yaw.transpose();
 }
@@ -351,47 +324,32 @@ void Estimator::updateOrientations(
     // Initialize yaw offsets.
     if (yaw_offsets_.empty())
     {
-        yaw_offsets_.resize(
-            orientations.size(),
-            std::nullopt);
+        yaw_offsets_.resize(orientations.size(), std::nullopt);
     }
 
     // Handle a change in number of modules gracefully.
     if (yaw_offsets_.size() != orientations.size())
     {
-        yaw_offsets_.resize(
-            orientations.size(),
-            std::nullopt);
+        yaw_offsets_.resize(orientations.size(), std::nullopt);
     }
 
     std::vector<Matrix3> new_orientations;
     new_orientations.reserve(orientations.size());
 
-    for (std::size_t i = 0;
-            i < orientations.size();
-            ++i)
+    for (std::size_t i = 0; i < orientations.size(); ++i)
     {
         // Initialize yaw offset so that X points toward global X.
         if (!yaw_offsets_[i].has_value())
         {
-            pinocchio::SE3 orientation(
-                orientations[i],
-                Vector3::Zero());
-
-            yaw_offsets_[i] =
-                getYawOffset(
-                    orientation,
-                    Vector3::UnitX());
+	     pinocchio::SE3 orientation(orientations[i], Vector3::Zero());
+            yaw_offsets_[i] = getYawOffset(orientation, Vector3::UnitX());
         }
 
-        new_orientations.push_back(
-            orientations[i] *
-            yaw_offsets_[i].value());
+        new_orientations.push_back(orientations[i] * yaw_offsets_[i].value());
     }
 
     // Estimate the common orientation.
-    world_.rotation(
-        meanOfRotations(new_orientations));
+    world_.rotation(meanOfRotations(new_orientations));
 
     // Update yaw offsets to compensate for modules drifting
     // relative to one another.
@@ -399,14 +357,12 @@ void Estimator::updateOrientations(
             i < orientations.size();
             ++i)
     {
-        pinocchio::SE3 orientation(
-            orientations[i],
-            Vector3::Zero());
+        pinocchio::SE3 orientation(orientations[i], Vector3::Zero());
 
-        yaw_offsets_[i] =
-            getYawOffset(
-                orientation,
-                world_.rotation().col(0));
+        yaw_offsets_[i] = getYawOffset(
+            orientation
+            world_.rotation().col(0)
+        );
     }
 }
 
@@ -414,8 +370,8 @@ void Estimator::updateOrientations(
 /**
  * Update world orientation using IMU acceleration and angular velocity.
  *
- * @param lin_acc Linear acceleration vectors in head frames.
- * @param ang_vel Angular velocity vectors in head frames.
+ * @param lin_acc Linear acceleration vectors in the head frame.
+ * @param ang_vel Angular velocity vectors in the head frame.
  * @param dt      Time interval over which velocity is integrated.
  */
 void Estimator::updateImus(
@@ -428,20 +384,12 @@ void Estimator::updateImus(
         return;
     }
 
-    // 10 degree outlier threshold.
     constexpr double outlier_deg = 10.0;
 
-    const double outlier_threshold =
-        std::cos(
-            outlier_deg *
-            M_PI /
-            180.0);
+    const double outlier_threshold = std::cos(outlier_deg * M_PI / 180.0);
 
     // Estimate gravity direction.
-    const RobustDirectionResult gravity_result =
-        robustCentralDirection(
-            lin_acc,
-            outlier_threshold);
+    const Vector3 grav = robustCentralDirection(lin_acc, outlier_threshold);
 
     if (!gravity_result.mean.has_value())
     {
@@ -451,13 +399,6 @@ void Estimator::updateImus(
     const Vector3 grav =
         gravity_result.mean.value();
 
-    // Python:
-    //
-    // ang_ds = [
-    //     pin.rpy.rpyToMatrix(*(a))
-    //     for a in np.multiply(ang_vel, dt * 2)
-    // ]
-    //
     // Convert angular velocity * dt * 2 into roll/pitch/yaw
     // and construct the corresponding rotation.
     std::vector<Matrix3> angular_deltas;
@@ -466,13 +407,11 @@ void Estimator::updateImus(
 
     for (const auto& angular_velocity : ang_vel)
     {
+        // TODO: find out why i have to multiply this by 2
         const Vector3 rotation_vector = angular_velocity * dt * 2;
         angular_deltas.push_back(pinocchio::exp3(rotation_vector));
     }
 
-    // Match Python's ang_ds[:-2].
-    //
-    // If there are <= 2 IMUs, there is no equivalent subset.
     if (angular_deltas.size() <= 2)
     {
         return;
@@ -481,14 +420,8 @@ void Estimator::updateImus(
     angular_deltas.resize(
         angular_deltas.size() - 2);
 
-    const Matrix3 ang_d =
-        meanOfRotations(angular_deltas);
+    const Matrix3 ang_d = meanOfRotations(angular_deltas);
 
-    // Equivalent to:
-    //
-    // world_orientation =
-    //     self.world.inverse().rotation @ ang_d.T
-    //
     const Matrix3 world_orientation =
         world_.rotation().transpose() *
         ang_d.transpose();
