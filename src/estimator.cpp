@@ -260,7 +260,7 @@ void Estimator::updateImus(
         throw std::invalid_argument("'lin_acc' and 'ang_vel' are different lengths");
     }
 
-    constexpr double outlier_deg = 10.0;
+    constexpr double outlier_deg = 15.0;
 
     const double outlier_threshold = std::cos(outlier_deg * M_PI / 180.0);
 
