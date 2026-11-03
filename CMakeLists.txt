@@ -108,6 +108,13 @@ ament_export_dependencies(
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
 
+  find_package(ament_cmake_pytest REQUIRED)
+  # Register a specific Python test file
+  ament_add_pytest_test(test_xacro_files
+    test/test_estimation.py
+    TIMEOUT 60
+  )
+
   # Automatically runs cpplint, cppcheck, uncrustify, etc.
   ament_lint_auto_find_test_dependencies()
 endif()
