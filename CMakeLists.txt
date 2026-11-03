@@ -16,6 +16,7 @@ find_package(pybind11 REQUIRED)
 
 add_library(snakelib_estimation SHARED
   src/estimator.cpp
+  src/kinematics.cpp
 )
 
 target_include_directories(snakelib_estimation

@@ -3,12 +3,91 @@
 #include <pybind11/stl.h>
 
 #include "snakelib_estimation/estimator.hpp"
+#include "snakelib_estimation/kinematics.hpp"
 
 namespace py = pybind11;
 
 PYBIND11_MODULE(_snakelib_estimation, m)
 {
     m.doc() = "Python bindings for snake pose estimation";
+
+    // Kinematics
+
+    py::class_<snakelib_estimation::Kinematics>(m, "Kinematics", R"pbdoc(
+        Kinematics for snake robots.
+
+        Typical usage example (msg is a HebiSensors message):
+
+            kin = Kinematics()
+            kin.update(msg.position, msg.velocity)
+            frames = kin.fk()
+            translations = np.array([f.translation for f in frames]
+            rotations = np.array([f.rotation for f in frames]
+            accelerations = kin.imu_to_head_frame(zip(
+                msg.lin_acc.x,
+                msg.lin_acc.y,
+                msg.lin_acc.z
+            ))
+    )pbdoc")
+
+        .def(py::init<std::string>(), py::arg("urdf_xml"),
+             "Constructs the Kinematics model from a URDF XML string.")
+
+        .def("update", &snakelib_estimation::Kinematics::update,
+             py::arg("position"),
+             py::arg("velocity") = std::nullopt,
+             R"pbdoc(
+                Update the kinematics using module feedback.
+
+                Args:
+                    position (Iterable[float]): Joint angles.
+                    velocity (Iterable[float]): Joint velocities
+
+                Raises:
+                    RuntimeError: If the position or velocity are the wrong size
+             )pbdoc")
+
+        .def("com", &snakelib_estimation::Kinematics::com,
+             "Calculate the center of mass of the robot.")
+
+        .def("fk", &snakelib_estimation::Kinematics::fk,
+             py::arg("joint_names") = std::vector<std::string>{},
+             py::arg("suffix") = "_link",
+             R"pbdoc(
+                Calculate the forward kinematics of each module in the world frame.
+
+                This only works after calling self.update
+                The world frame is the same as head_link unless self._world is updated
+
+                Args:
+                    names: Joint names. Will default to all joints.
+                    suffix: A suffix to attach to each joint name that represents a link
+                    in the URDF.
+
+                Returns:
+                    A list of pin.SE3 representing the transformation of each joint
+
+                Raises:
+                    KeyError: Any name + suffix not in the URDF.
+        )pbdoc")
+
+        .def("imu_to_head_frame", &snakelib_estimation::Kinematics::imu_to_head_frame,
+             py::arg("imu_vals"),
+             R"pbdoc(
+                Rotates imu_vals from IMU frame into head frame.
+
+                This only works after calling self.update.
+                This does not apply the translation component of each transformation.
+
+                Args:
+                    imu_vals: Values such as lin_accel and ang_vel specified in the IMU frame
+
+                Returns:
+                    A np array of the values rotated into the head frame
+
+                Raises:
+                    AssertionError: When the number of imu_values does not match the joints.
+             )pbdoc");
 
     // Estimator
 
