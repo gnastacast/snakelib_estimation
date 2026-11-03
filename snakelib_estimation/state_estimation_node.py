@@ -36,7 +36,7 @@ def pin_to_tf(frame: pin.SE3, frame_id: str, header: Header) -> TransformStamped
 
 class EstimatorNode(Node):
     def __init__(self):
-        super().__init__('minimal_publisher')
+        super().__init__('snake_estimator')
 
         # Get debug parameter
         self.declare_parameter('draw_debug', False)
@@ -221,14 +221,14 @@ class EstimatorNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_publisher = EstimatorNode()
+    snake_estimator = EstimatorNode()
 
-    rclpy.spin(minimal_publisher)
+    rclpy.spin(snake_estimator)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    minimal_publisher.destroy_node()
+    snake_estimator.destroy_node()
     rclpy.shutdown()
 
 
